@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regression & ML Predictions</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Regression & ML Predictions</h1>
+
+        <form method="POST">
+            <label for="year">Enter a Year:</label>
+            <input type="number" name="year" id="year" required>
+            <button type="submit">Predict</button>
+        </form>
+
+        {% if results %}
+            {% for result in results %}
+                <div class="area-result">
+                    <h2>{{ result.area }}</h2>
+                    <img src="data:image/png;base64,{{ result.plot }}" alt="Plot for {{ result.area }}">
+                    <p><strong>Linear Regression:</strong> {{ result.predicted_lr }}</p>
+                    <p><strong>SVM Prediction:</strong> {{ result.predicted_svm }}</p>
+                    <p><strong>KNN Prediction:</strong> {{ result.predicted_knn }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</body>
+</html>

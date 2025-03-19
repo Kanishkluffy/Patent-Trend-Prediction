@@ -1,0 +1,16 @@
+form {
+    margin-bottom: 20px;
+}
+
+input[type="number"] {
+    padding: 8px;
+    margin-right: 10px;
+}
+
+button {
+    padding: 8px 12px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
