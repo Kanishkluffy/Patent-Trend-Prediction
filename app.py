@@ -20,11 +20,11 @@ def index():
     results = []
 
     try:
-        df = pd.read_excel('data.xlsx')
+        df = pd.read_excel('patent.xlsx')
         df = df.dropna(subset=["Publication Date"])  # Remove NaN values
         df["Publication Date"] = pd.to_numeric(df["Publication Date"], errors='coerce')
         df = df.dropna(subset=["Publication Date"])  # Drop rows where conversion failed
-        areas = df["Area"].unique()
+        areas = df['Area'].unique()
     except Exception as e:
         return f"Error loading data: {e}"
 
