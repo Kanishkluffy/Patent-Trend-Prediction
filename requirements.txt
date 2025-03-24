@@ -1,0 +1,8 @@
+pip install flask
+pip install pandas
+pip install matplotlib
+pip install seaborn
+pip install numpy
+pip install sklearn
+pip install io
+pip install base64
