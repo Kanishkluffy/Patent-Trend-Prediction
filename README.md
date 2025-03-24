@@ -4,14 +4,23 @@
 This project is a Flask-based web application that predicts patent trends using various machine learning models. Users can select a patent area, enter a target year, and choose a prediction model to estimate the number of patents published in that year.
 
 ## Features
-- Supports multiple machine learning models:
+
+- **Multi-Model Prediction**:
   - Linear Regression
   - Support Vector Machine (SVM)
   - K-Nearest Neighbors (KNN)
-  - Polynomial Regression
-- Dynamic visualization of historical and predicted patent trends
-- Long-term patent prediction up to 30 years ahead
-- Interactive UI for user input and prediction results
+
+- **Interactive Visualization**:
+  - Actual patent counts (solid blue dots)
+  - Zero-patent years (hollow circles)
+  - Model prediction line (red)
+  - Future projections (purple dashed line)
+  - Target year prediction (green dot)
+
+- **Key Metrics**:
+  - Predicted patent count
+  - Mean Squared Error (MSE)
+  - R-squared value (for linear regression)
 
 ## Technologies Used
 - Python (Flask, Pandas, Matplotlib, Seaborn)
@@ -56,8 +65,6 @@ This project is a Flask-based web application that predicts patent trends using 
 │   ├── 📄 styles.css  # CSS styling
 │-- 📄 patent.xlsx  # Dataset file
 ```
-
-
 
 ## Contact
 For any queries, contact: ktadhithya2006@gmail.com

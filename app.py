@@ -1,16 +1,11 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')  # Set non-interactive backend
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.svm import SVR
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import make_pipeline
-from sklearn.metrics import mean_squared_error
+from scipy import stats
 import io
 import base64
 
@@ -19,9 +14,6 @@ app = Flask(__name__)
 # Load data
 file_path = "patent.xlsx"
 df = pd.read_excel(file_path)
-
-# Group data by 'Area' and 'Publication Year'
-df_grouped = df.groupby(["Area", "Publication Year"]).size().reset_index(name="Count")
 
 @app.route('/')
 def index():
@@ -32,56 +24,77 @@ def index():
 def predict():
     area = request.form['area']
     year = int(request.form['year'])
-    model_type = request.form['model']  # Select model type
     
     # Filter data for the selected area
-    df_area = df_grouped[df_grouped['Area'] == area]
+    temp = df.loc[df["Area"] == area]
+    y = temp["Publication Year"].value_counts().sort_index()
+    years = y.index.to_list()
+    counts = y.to_list()
     
-    # Train models
-    X = df_area[['Publication Year']].values.reshape(-1, 1)  # Ensure correct shape
-    y = df_area['Count']
+    if len(years) < 2:
+        return jsonify({'error': 'Not enough data points for regression (need at least 2)'})
     
-    models = {
-        "linear_regression": LinearRegression(),
-        "svm": SVR(kernel='rbf'),
-        "knn": KNeighborsRegressor(n_neighbors=3),
-        "polynomial_regression": make_pipeline(PolynomialFeatures(degree=3), LinearRegression())
-    }
+    # Perform linear regression
+    slope, intercept, r, p, std_err = stats.linregress(years, counts)
     
-    if model_type not in models:
-        return jsonify({'error': 'Invalid model selection'})
+    def predict_func(x):
+        return slope * x + intercept
     
-    model = models[model_type]
-    model.fit(X, y)
-    prediction = model.predict(np.array([[year]]).reshape(-1, 1))[0]
+    prediction = predict_func(year)
     
-    # Evaluate model
-    y_pred = model.predict(X)
-    mse = mean_squared_error(y, y_pred)
+    # Generate model values for plotting
+    model_years = np.array(years)
+    model_values = predict_func(model_years)
     
-    # Generate future years for long-term prediction
-    future_years = np.array(range(min(df_area['Publication Year']), max(df_area['Publication Year']) + 30)).reshape(-1, 1)
-    future_predictions = model.predict(future_years)
+    # Generate future predictions (10 years beyond last data point)
+    future_years = np.arange(min(years), max(years) + 11)
+    future_predictions = predict_func(future_years)
+    
+    # Calculate MSE
+    mse = np.mean((np.array(counts) - model_values) ** 2)
     
     # Plot graph
-    plt.figure(figsize=(8, 5))
-    sns.scatterplot(x=df_area['Publication Year'], y=df_area['Count'], label='Actual Data', color='blue')
-    sns.lineplot(x=df_area['Publication Year'], y=y_pred, label=f'{model_type} Prediction', color='red')
-    sns.lineplot(x=future_years.flatten(), y=future_predictions, label='Future Prediction', color='purple', linestyle='dashed')
-    plt.scatter(year, prediction, color='green', label=f'Prediction for {year}')
-    plt.xlabel("Year")
-    plt.ylabel("Number of Patents")
-    plt.title(f"Patent Trend for {area} using {model_type}\nMSE: {mse:.2f}")
-    plt.legend()
+    plt.figure(figsize=(12, 6))
     
+    # Plot actual data
+    plt.scatter(years,counts,color='blue',label='Actual Data',zorder=3)
+    
+    # Plot regression line
+    plt.plot(model_years,model_values,color='red',label='Linear Regression Fit',linewidth=2)
+    
+    # Plot future projections
+    plt.plot(future_years,future_predictions,'purple',linestyle='dashed',label='Future Projection',linewidth=2)
+    
+    # Highlight the prediction point
+    plt.scatter([year],[prediction],color='green',s=100,zorder=4,label=f'Prediction for {year}: {round(prediction, 1)}')
+    
+    # Add zero-count markers if any years are missing
+    all_years = range(min(years), max(years)+1)
+    missing_years = [y for y in all_years if y not in years]
+    if missing_years:
+        plt.scatter(missing_years,[0]*len(missing_years),color='blue',marker='o',facecolors='none',edgecolors='blue',s=60,zorder=2,label='Zero Patents')
+    
+    plt.xlabel("Year", fontsize=12)
+    plt.ylabel("Number of Patents", fontsize=12)
+    plt.title(f"Patent Trend for {area}\nMSE: {mse:.2f}, R-squared: {r**2:.2f}", fontsize=14)
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
+
     # Convert plot to image
     img = io.BytesIO()
-    plt.savefig(img, format='png')
-    plt.close()  # Close the figure to free memory
+    plt.savefig(img, format='png', bbox_inches='tight', dpi=100)
+    plt.close()
     img.seek(0)
     plot_url = base64.b64encode(img.getvalue()).decode()
-    
-    return jsonify({'prediction': round(prediction, 2), 'mse': round(mse, 2), 'plot_url': plot_url})
+
+    return jsonify({
+        'prediction': round(prediction, 2), 
+        'mse': round(mse, 2),
+        'r_squared': round(r**2, 4),
+        'plot_url': plot_url,
+        'status': 'success'
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
