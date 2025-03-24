@@ -12,7 +12,6 @@ This project is a Flask-based web application that predicts patent trends using 
 
 - **Interactive Visualization**:
   - Actual patent counts (solid blue dots)
-  - Zero-patent years (hollow circles)
   - Model prediction line (red)
   - Future projections (purple dashed line)
   - Target year prediction (green dot)
